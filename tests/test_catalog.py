@@ -1,7 +1,8 @@
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
-from app.catalog import find_matching_prices
+from app.catalog import find_matching_prices, load_price_records
 from app.models import CoinObservation, PriceRecord
 
 
@@ -50,3 +51,29 @@ def test_requires_matching_mint_mark_when_identified() -> None:
 
 def test_returns_no_prices_if_identification_is_incomplete() -> None:
     assert find_matching_prices(observation(year=None), [record()]) == []
+
+
+def test_catalog_contains_numista_morlon_prices_and_issue_metadata() -> None:
+    catalog_path = Path(__file__).parents[1] / "data" / "catalog.jsonl"
+    records = load_price_records(catalog_path)
+    numista_records = [record for record in records if record.source == "numista"]
+
+    assert len(numista_records) == 68
+    prices_1935 = {
+        record.condition: record.price
+        for record in numista_records
+        if record.year == 1935
+    }
+    assert prices_1935 == {
+        "F": Decimal(12),
+        "VF": Decimal(15),
+        "XF": Decimal(19),
+    }
+
+    trial = next(record for record in numista_records if record.variety is not None)
+    assert trial.year == 1931
+    assert trial.condition == "XF"
+    assert trial.price == Decimal(120)
+    assert trial.mintage is None
+    assert trial.frequency == 0.5
+    assert trial.reference == "Franc 2014# 219/1; KM# E-B64"

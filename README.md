@@ -44,6 +44,8 @@ The API documentation is available at <http://127.0.0.1:8000/docs>.
 
 Add one JSON object per line to `data/catalog.jsonl`. Each record must describe
 an actual source result; keep the source URL and date when it was retrieved.
+Records can also include variety, mintage, frequency, and reference metadata
+when supplied by the source.
 For example (illustrative schema only, not a real price):
 
 ```json
@@ -54,6 +56,18 @@ Only exact matches on country, denomination, and year are returned. When a mint
 mark is identified, it must also match. Review visual identification and coin
 condition manually: catalogue prices are not guaranteed sale prices, and
 condition can materially affect value.
+
+To fetch and refresh the regular-circulation 1 Franc Morlon price records from
+LeFranc, run:
+
+```powershell
+python -m app.lefranc
+```
+
+This imports the available euro values by year and condition grade. Trial
+strikes marked `essai` are excluded because they are a separate variety. The
+import replaces previous records from this LeFranc page and preserves records
+from other sources.
 
 The `/api/identify` endpoint requires both `front_image` and `back_image`
 multipart file fields. Each image is sent to the vision model in the same

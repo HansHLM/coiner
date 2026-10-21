@@ -20,6 +20,10 @@ class PriceRecord(BaseModel):
     denomination: str
     year: int
     mint_mark: str | None = None
+    variety: str | None = None
+    mintage: int | None = Field(default=None, ge=0)
+    frequency: float | None = Field(default=None, ge=0, le=100)
+    reference: str | None = None
     source: Literal["lefranc", "numista"]
     price: Decimal = Field(ge=0)
     currency: str = Field(min_length=3, max_length=3)
