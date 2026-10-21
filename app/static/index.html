@@ -15,10 +15,13 @@
   <body>
     <main>
       <h1>Coiner</h1>
-      <p>Upload een duidelijke foto van een munt. Prijzen worden alleen getoond als er een bronrecord is.</p>
+      <p>Upload duidelijke foto's van de voor- en achterzijde van de munt. Prijzen worden alleen getoond als er een bronrecord is.</p>
       <form id="coin-form">
-        <label for="image">Muntfoto (JPEG, PNG of WebP)</label><br>
-        <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <label for="front-image">Voorzijde (JPEG, PNG of WebP)</label><br>
+        <input id="front-image" name="front_image" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <br>
+        <label for="back-image">Achterzijde (JPEG, PNG of WebP)</label><br>
+        <input id="back-image" name="back_image" type="file" accept="image/jpeg,image/png,image/webp" required>
         <br>
         <button type="submit">Herken munt en zoek prijzen</button>
       </form>

@@ -6,7 +6,7 @@ invent a price when a source record is unavailable.
 
 ## Current scope
 
-- Upload a coin image in the browser.
+- Upload front and back images of a coin together in the browser.
 - Ask an OpenAI vision model for a structured coin description.
 - Match that description against a local JSONL catalogue of Lefranc and Numista
   records.
@@ -54,6 +54,11 @@ Only exact matches on country, denomination, and year are returned. When a mint
 mark is identified, it must also match. Review visual identification and coin
 condition manually: catalogue prices are not guaranteed sale prices, and
 condition can materially affect value.
+
+The `/api/identify` endpoint requires both `front_image` and `back_image`
+multipart file fields. Each image is sent to the vision model in the same
+request, labelled as the obverse or reverse, and each is subject to the
+configured `COINER_MAX_IMAGE_BYTES` limit.
 
 ## Configuration
 

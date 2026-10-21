@@ -9,12 +9,19 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def identify_coin(
-    image_bytes: bytes, content_type: str, api_key: str, model: str
+    images: list[tuple[bytes, str]], api_key: str, model: str
 ) -> CoinObservation:
-    if content_type not in ALLOWED_IMAGE_TYPES:
-        raise ValueError("Upload a JPEG, PNG, or WebP image.")
+    if len(images) != 2:
+        raise ValueError("Provide both the front and back images of the coin.")
 
-    encoded_image = base64.b64encode(image_bytes).decode("ascii")
+    encoded_images = []
+    for image_bytes, content_type in images:
+        if content_type not in ALLOWED_IMAGE_TYPES:
+            raise ValueError("Upload JPEG, PNG, or WebP images.")
+        encoded_images.append(
+            (content_type, base64.b64encode(image_bytes).decode("ascii"))
+        )
+
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
         model=model,
@@ -23,7 +30,9 @@ def identify_coin(
             {
                 "role": "system",
                 "content": (
-                    "Identify visible coin details conservatively. Do not estimate a price. "
+                    "Identify the coin using both its front and back images, and combine "
+                    "evidence from both sides. Identify visible coin details conservatively. "
+                    "Do not estimate a price. "
                     "Use null for uncertain country, denomination, year, or mint mark. "
                     "Set needs_review true if the image or identification is uncertain. "
                     "Return JSON with country, denomination, year, mint_mark, "
@@ -34,11 +43,19 @@ def identify_coin(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Identify the coin shown in this photo."},
+                    {"type": "text", "text": "Coin front (obverse):"},
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:{content_type};base64,{encoded_image}",
+                            "url": f"data:{encoded_images[0][0]};base64,{encoded_images[0][1]}",
+                            "detail": "high",
+                        },
+                    },
+                    {"type": "text", "text": "Coin back (reverse):"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{encoded_images[1][0]};base64,{encoded_images[1][1]}",
                             "detail": "high",
                         },
                     },

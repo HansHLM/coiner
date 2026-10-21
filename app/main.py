@@ -21,26 +21,35 @@ def home() -> FileResponse:
 
 
 @app.post("/api/identify", response_model=IdentificationResult)
-def identify(image: Annotated[UploadFile, File()]) -> IdentificationResult:
-    if image.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, or WebP image.")
+def identify(
+    front_image: Annotated[UploadFile, File()],
+    back_image: Annotated[UploadFile, File()],
+) -> IdentificationResult:
+    uploaded_images = (front_image, back_image)
+    if any(image.content_type not in ALLOWED_IMAGE_TYPES for image in uploaded_images):
+        raise HTTPException(status_code=415, detail="Upload JPEG, PNG, or WebP images.")
     if settings.openai_api_key is None:
         raise HTTPException(status_code=503, detail="Set COINER_OPENAI_API_KEY to enable identification.")
     if settings.max_image_bytes < 1:
         raise HTTPException(status_code=500, detail="COINER_MAX_IMAGE_BYTES must be greater than zero.")
 
-    image_bytes = image.file.read(settings.max_image_bytes + 1)
-    if len(image_bytes) > settings.max_image_bytes:
-        raise HTTPException(status_code=413, detail="The image exceeds the configured size limit.")
-    try:
-        with Image.open(BytesIO(image_bytes)) as decoded_image:
-            decoded_image.verify()
-    except (UnidentifiedImageError, OSError) as error:
-        raise HTTPException(status_code=400, detail="The uploaded file is not a valid image.") from error
+    images = []
+    for image in uploaded_images:
+        image_bytes = image.file.read(settings.max_image_bytes + 1)
+        if len(image_bytes) > settings.max_image_bytes:
+            raise HTTPException(status_code=413, detail="An image exceeds the configured size limit.")
+        try:
+            with Image.open(BytesIO(image_bytes)) as decoded_image:
+                decoded_image.verify()
+        except (UnidentifiedImageError, OSError) as error:
+            raise HTTPException(
+                status_code=400, detail="An uploaded file is not a valid image."
+            ) from error
+        images.append((image_bytes, image.content_type))
 
     try:
         observation = identify_coin(
-            image_bytes, image.content_type, settings.openai_api_key, settings.openai_model
+            images, settings.openai_api_key, settings.openai_model
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
