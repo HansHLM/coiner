@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coiner - muntherkenning</title>
+    <style>
+      body { font: 1rem/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; padding: 0 1rem; }
+      button, input { font: inherit; margin: .5rem 0; }
+      button { cursor: pointer; padding: .5rem 1rem; }
+      pre { background: #f4f4f4; overflow-wrap: anywhere; padding: 1rem; white-space: pre-wrap; }
+      .error { color: #a00; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Coiner</h1>
+      <p>Upload een duidelijke foto van een munt. Prijzen worden alleen getoond als er een bronrecord is.</p>
+      <form id="coin-form">
+        <label for="image">Muntfoto (JPEG, PNG of WebP)</label><br>
+        <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <br>
+        <button type="submit">Herken munt en zoek prijzen</button>
+      </form>
+      <p id="status" role="status"></p>
+      <section id="result" aria-live="polite"></section>
+    </main>
+    <script>
+      const form = document.querySelector("#coin-form");
+      const status = document.querySelector("#status");
+      const result = document.querySelector("#result");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        status.textContent = "Bezig met herkennen en zoeken...";
+        status.className = "";
+        result.replaceChildren();
+        try {
+          const response = await fetch("/api/identify", {
+            method: "POST",
+            body: new FormData(form)
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || "De aanvraag is mislukt.");
+          }
+          const output = document.createElement("pre");
+          output.textContent = JSON.stringify(data, null, 2);
+          result.append(output);
+          status.textContent = data.price_note;
+        } catch (error) {
+          status.textContent = error.message;
+          status.className = "error";
+        }
+      });
+    </script>
+  </body>
+</html>
